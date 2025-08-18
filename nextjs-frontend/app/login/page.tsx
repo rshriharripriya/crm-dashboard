@@ -60,6 +60,7 @@ export default function Page() {
                 name="password"
                 type="password"
                 required
+                autoComplete="current-password"
                 className="border-gray-300 dark:border-gray-600"
               />
               <FieldError state={state} field="password" />

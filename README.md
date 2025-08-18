@@ -1,70 +1,89 @@
-## Next.js FastAPI Template
 
-<a href="https://www.vintasoftware.com/blog/next-js-fastapi-template"><img src="images/banner.png" alt="Next.js FastAPI Template" width="auto"></a>
+<h1 align="center">Undergraduation CRM Dashboard</h1>
+
 <p align="center">
-    <em>Next.js FastAPI Template: Python + Modern TypeScript stack with Zod validation.</em>
+  A lightweight internal CRM dashboard for managing student interactions on undergraduation.com.
 </p>
+
 <p align="center">
-<a href="https://github.com/vintasoftware/nextjs-fastapi-template/actions/workflows/ci.yml" target="_blank">
-    <img src="https://github.com/vintasoftware/nextjs-fastapi-template/actions/workflows/ci.yml/badge.svg" alt="CI">
-</a>
-<a href="https://coveralls.io/github/vintasoftware/nextjs-fastapi-template" target="_blank">
-    <img src="https://coveralls.io/repos/github/vintasoftware/nextjs-fastapi-template/badge.svg" alt="Coverage">
-</a>
+  <a href="#introduction"><strong>Introduction</strong></a> |
+  <a href="#objective"><strong>Objective</strong></a> |
+  <a href="#features"><strong>Features</strong></a> |
+  <a href="#domain-info"><strong>Domain Info</strong></a> |
+  <a href="#tech-stack"><strong>Tech Stack</strong></a> |
+  <a href="#resources-used"><strong>Resources used</strong></a> |
+  <a href="#deliverables"><strong>Deliverables</strong></a> |
+ 
 </p>
+<br/>
+
+## Introduction
+
+This project aims to build a basic internal-facing CRM-style web dashboard to help the Undergraduation team manage student interactions, track their progress, and log communication history. This will provide a centralized view of each student’s journey on the platform.
+
+## Objective
+
+Build an internal CRM dashboard to:
+
+*   Track every student’s engagement
+*   Monitor application progress
+*   Log and view communication history
+*   Take actions (send follow-ups, notes, etc.)
+
+## Features
+
+### Student Directory View:
+
+*   Table view of all students with filters/search
+*   Key columns: Name, Email, Country, Application Status (“Exploring”, “Shortlisting”, “Applying”, “Submitted”), Last Active
+*   Ability to click and open an individual student's profile
+
+### Student Individual Profile View:
+
+*   Basic Info (name, email, phone, grade, country)
+*   Interaction Timeline (login activity, AI questions asked, documents submitted)
+*   Communication Log (emails, SMS)
+*   Internal Notes (team can add/edit/delete)
+*   Current progress bar based on the application stage
+
+### Communication Tools:
+
+*   Log communications manually (e.g., “Called student to discuss essays”)
+*   Trigger follow-up email (mock only — no need to send real email)
+*   Schedule a reminder or task for the internal team
+
+### Insights & Filters:
+
+*   Quick filters: “Students not contacted in 7 days”, “High intent”, “Needs essay help”
+*   Display summary stats (e.g., 120 active students, 45 in essay stage)
+*   Bonus (Optional): Add an “AI Summary” of each student based on their profile (mock it)
 
 ---
 
-**Documentation**: <a href="https://vintasoftware.github.io/nextjs-fastapi-template/" target="_blank">https://vintasoftware.github.io/nextjs-fastapi-template/</a>
+## Domain info:
 
-**Source Code**: <a href="https://github.com/vintasoftware/nextjs-fastapi-template/" target="_blank">https://github.com/vintasoftware/nextjs-fastapi-template/</a>
+*   students can write essays with ai 
+*   students can select colleges which are under my colleges
+*   they can select budget, major, us region (state too ig), class size 
+*   students give their exam scores (SATs and stuff - see website)
 
----
 
-The Next.js FastAPI Template provides a solid foundation for scalable, high-performance web applications, following clean architecture and best practices. It simplifies development by integrating FastAPI, Pydantic, and Next.js with TypeScript and Zod, ensuring end-to-end type safety and schema validation between frontend and backend.
 
-The FastAPI backend supports fully asynchronous operations, optimizing database queries, API routes, and test execution for better performance. Deployment is seamless, with both backend and frontend fully deployable to Vercel, enabling quick product releases with minimal configuration.
+## Tech Stack:
 
-### Key features
-✔ End-to-end type safety – Automatically generated typed clients from the OpenAPI schema ensure seamless API contracts between frontend and backend.
+*   Frontend: Next.js with typescript
+*   Backend: FastAPI
+*   Database: Supabase ( since setup is easy and i think relational dbs are better for this usecase and also because its freeeee)
+*   Email: TBD
+*   Auth: JWT
 
-✔ Hot-reload updates – The client updates automatically when backend routes change, keeping FastAPI and Next.js in sync.
+## Resources used
 
-✔ Versatile foundation – Designed for MVPs and production-ready applications, with a pre-configured authentication system and API layer.
+This project was made on top of the nextjs-fastapi-template (open-source), which is designed to be cloned and modified for each project. For more information on getting started, [view the documentation](https://vintasoftware.github.io/nextjs-fastapi-template/).
 
-✔ Quick deployment – Deploys a full-stack application—including authentication flow and a dashboard—on Vercel in just a few steps.
+## Deliverables
 
-✔ Production-ready authentication – Includes a pre-configured authentication system and dashboard interface, allowing you to immediately start development with user management features.
+*   Working web app locally hosted
+*   Link to GitHub repo with code
+*   README file explaining setup
 
-## Technology stack
-This template features a carefully selected set of technologies to ensure efficiency, scalability, and ease of use:
-
-- Zod + TypeScript – Type safety and schema validation across the stack.
-- fastapi-users – Complete authentication system with:
-    - Secure password hashing
-    - JWT authentication
-- Email-based password recovery
-- shadcn/ui – Prebuilt React components with Tailwind CSS.
-- OpenAPI-fetch – Fully typed client generation from the OpenAPI schema.
-- UV – Simplified dependency management and packaging.
-- Docker Compose – Consistent environments for development and production.
-- Pre-commit hooks – Automated code linting, formatting, and validation before commits.
-- Vercel Deployment – Serverless backend and scalable frontend, deployable with minimal configuration.
-
-This is a partial list of the technologies included in the template. For a complete overview, visit our [Technology selection](https://vintasoftware.github.io/nextjs-fastapi-template/technology-selection/) page.
-
-## Get Started
-
-To use this template, visit our [Get Started](https://vintasoftware.github.io/nextjs-fastapi-template/get-started/) and follow the steps.
-
-## Using the template? Let's talk!
-
-We’re always curious to see how the community builds on top of it and where it’s being used. To collaborate:
-
-- Join the conversation on [GitHub Discussions](https://github.com/vintasoftware/nextjs-fastapi-template/discussions)
-- Report bugs or suggest improvements via [issues](https://github.com/vintasoftware/nextjs-fastapi-template/issues)
-- Check the [Contributing](https://vintasoftware.github.io/nextjs-fastapi-template/contributing/) guide to get involved
-
-This project is maintained by [Vinta Software](https://www.vinta.com.br/) and is actively used in production systems we build for clients. Talk to our expert consultants — get a free technical review: contact@vinta.com.br.
-
-*Disclaimer: This project is not affiliated with Vercel.*

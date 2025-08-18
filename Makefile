@@ -13,6 +13,7 @@ help:
 
 # Backend commands
 .PHONY: start-backend test-backend
+#make start-backend
 
 start-backend: ## Start the backend server with FastAPI and hot reload
 	cd $(BACKEND_DIR) && ./start.sh
@@ -23,6 +24,7 @@ test-backend: ## Run backend tests using pytest
 
 # Frontend commands
 .PHONY: start-frontend test-frontend
+#make start-frontend
 
 start-frontend: ## Start the frontend server with pnpm and hot reload
 	cd $(FRONTEND_DIR) && ./start.sh

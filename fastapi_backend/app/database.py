@@ -1,40 +1,43 @@
 from typing import AsyncGenerator
-from urllib.parse import urlparse
-
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from fastapi import Depends
 from fastapi_users.db import SQLAlchemyUserDatabase
-from sqlalchemy import NullPool
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
-from .config import settings
 from .models import Base, User
+from .config import settings
 
+# Convert URL if needed
+db_url = settings.DATABASE_URL
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
 
-parsed_db_url = urlparse(settings.DATABASE_URL)
-
-async_db_connection_url = (
-    f"postgresql+asyncpg://{parsed_db_url.username}:{parsed_db_url.password}@"
-    f"{parsed_db_url.hostname}{':' + str(parsed_db_url.port) if parsed_db_url.port else ''}"
-    f"{parsed_db_url.path}"
+# Create async engine with disabled prepared statements
+engine = create_async_engine(
+    db_url,
+    poolclass=None,  # Disable SQLAlchemy pooling to use asyncpg's pool
+    connect_args={
+        "statement_cache_size": 0,  # Disable statement cache
+        "prepared_statement_cache_size": 0,  # Disable prepared statement cache
+        "command_timeout": 60,  # Add timeout for commands
+        "server_settings": {
+            "statement_timeout": "60000",  # 60 seconds in milliseconds
+            "client_encoding": "utf8"
+        }
+    }
 )
-
-# Disable connection pooling for serverless environments like Vercel
-engine = create_async_engine(async_db_connection_url, poolclass=NullPool)
 
 async_session_maker = async_sessionmaker(
-    engine, expire_on_commit=settings.EXPIRE_ON_COMMIT
+    engine,
+    expire_on_commit=False,
+    class_=AsyncSession
 )
-
-
-async def create_db_and_tables():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_session_maker() as session:
         yield session
 
-
 async def get_user_db(session: AsyncSession = Depends(get_async_session)):
     yield SQLAlchemyUserDatabase(session, User)
+
+async def create_db_and_tables():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)

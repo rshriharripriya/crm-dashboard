@@ -28,6 +28,26 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+        /* Add these new color variables */
+    --yellow-light: #FFFBEB;
+    --yellow-dark: #92400E;
+    --yellow-border: #FDE68A;
+
+    --green-light: #F0FDF4;
+    --green-dark: #166534;
+    --green-border: #BBF7D0;
+
+    --blue-light: #EFF6FF;
+    --blue-dark: #1E40AF;
+    --blue-border: #BFDBFE;
+
+    --red-light: #FEF2F2;
+    --red-dark: #991B1B;
+    --red-border: #FECACA;
+
+    --purple-light: #F5F3FF;
+    --purple-dark: #5B21B6;
+    --purple-border: #DDD6FE;
   }
 
   .dark {
