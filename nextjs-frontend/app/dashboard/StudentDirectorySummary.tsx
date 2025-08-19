@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { UserIcon, PencilIcon, FlameIcon, ClockIcon, AlertTriangleIcon } from 'lucide-react';
 
 interface StatCardProps {
   title: string;
@@ -79,7 +78,7 @@ interface StudentStats {
 const StudentDirectorySummary = () => {
   const [stats, setStats] = useState<StudentStats | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isError, setIsError] = useState<boolean>(false);
+  const [isError] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchStats = async () => {

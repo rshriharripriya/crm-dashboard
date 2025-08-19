@@ -48,6 +48,10 @@ interface Toast {
     type: 'success' | 'error';
 }
 
+interface AiSummaryResponse {
+    summary: string;
+}
+
 // Simple markdown renderer component
 const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
     const renderMarkdown = (text: string) => {
@@ -124,9 +128,11 @@ const StudentProfile = () => {
                 setSelectedTags(data.tags || []);
                 setNotes(data.internal_notes || "");
                 setLoading(false);
-            } catch (e: any) {
-                setError(e.message);
-                setLoading(false);
+            } catch (error: unknown) {
+                  if (error instanceof Error) {
+                      setError(error.message);
+                      setLoading(false);
+                  }
             }
         };
 
@@ -142,9 +148,10 @@ const StudentProfile = () => {
                 }
                 const data: CommunicationLog[] = await response.json();
                 setCommunicationLogs(data);
-            } catch (e: any) {
-                console.error("Failed to fetch communication logs:", e);
-            }
+            } catch (error: unknown) {
+                  if (error instanceof Error) {
+                console.error("Failed to fetch communication logs:", error);
+            }}
         };
 
         if (studentId) {
@@ -159,11 +166,12 @@ const StudentProfile = () => {
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
-            const data = await response.json();
+            const data: AiSummaryResponse = await response.json();
+
             setAiSummary(data.summary);
             showToast("AI Summary generated successfully!", 'success');
-        } catch (e: any) {
-            console.error("Failed to fetch AI summary:", e);
+        } catch (error: unknown) {
+            console.error("Failed to fetch AI summary:", error);
             setAiSummary("Failed to generate AI summary. Please try again later.");
             showToast("Failed to generate AI summary. Please try again.", 'error');
         } finally {
@@ -285,11 +293,12 @@ This email was sent from the student management system.`;
 
             const updatedStudent = await response.json();
             setStudent(updatedStudent);
-        } catch (e: any) {
-            console.error("Tag update error:", e);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            console.error("Tag update error:", error);
             // Revert UI on error
             setSelectedTags(student?.tags || []);
-            showToast(`Error: ${e.message}`, 'error');
+            showToast(`Error: ${errorMessage}`, 'error');
         }
     };
 
@@ -563,24 +572,21 @@ This email was sent from the student management system.`;
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-3">
-                                    {availableTags.map((tag) => {
-                                        const colors = getTagColors(tag);
-                                        return (
-                                            <div key={tag} className="flex items-center space-x-2">
-                                                <Checkbox
-                                                    id={tag}
-                                                    checked={selectedTags.includes(tag)}
-                                                    onCheckedChange={(checked) => handleTagChange(tag, checked as boolean)}
-                                                />
-                                                <label
-                                                    htmlFor={tag}
-                                                    className="flex items-center rounded-full px-2.5 py-1 text-xs font-medium border transition-all duration-200"
-                                                >
-                                                    {tag}
-                                                </label>
-                                            </div>
-                                        );
-                                    })}
+                                    {availableTags.map((tag) => (
+                                        <div key={tag} className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id={tag}
+                                                checked={selectedTags.includes(tag)}
+                                                onCheckedChange={(checked) => handleTagChange(tag, checked as boolean)}
+                                            />
+                                            <label
+                                                htmlFor={tag}
+                                                className="flex items-center rounded-full px-2.5 py-1 text-xs font-medium border transition-all duration-200"
+                                            >
+                                                {tag}
+                                            </label>
+                                        </div>
+                                    ))}
                                 </div>
                             </CardContent>
                         </Card>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Home, Users2, List } from "lucide-react";
+import { Home, List } from "lucide-react";
 import Image from "next/image";
 
 import {

@@ -13,7 +13,6 @@ import {
 import { useRouter } from 'next/navigation';
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -59,9 +58,12 @@ const StudentDirectory: React.FC = () => {
                 const data: Student[] = await response.json();
                 setStudents(data);
                 setLoading(false);
-            } catch (e: any) {
-                setError(e.message);
-                setLoading(false);
+            } catch (e: unknown) {
+
+  if (e instanceof Error) {
+      setError(e.message);
+      setLoading(false);
+  }
             }
         };
 
