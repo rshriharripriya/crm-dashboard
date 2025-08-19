@@ -8,7 +8,6 @@ from .utils import simple_generate_unique_route_id
 from app.routes.items import router as items_router
 from app.routes.students import router as students_router
 from app.config import settings
-from .database import get_user_db
 from fastapi_users import InvalidPasswordException
 
 app = FastAPI(
@@ -38,7 +37,7 @@ async def invalid_password_exception_handler(
 
 # Include authentication and user management routes
 app.include_router(
-    fastapi_users.get_auth_router(auth_backend, get_user_db=get_user_db),
+    fastapi_users.get_auth_router(auth_backend),
     prefix=f"/{AUTH_URL_PATH}/jwt",
     tags=["auth"],
 )
