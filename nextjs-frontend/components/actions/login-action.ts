@@ -8,7 +8,7 @@ import { getErrorMessage } from "@/lib/utils";
 
 export async function login(prevState: unknown, formData: FormData) {
   console.log("Login action started");
-  
+
   // Validate input
   const validatedFields = loginSchema.safeParse({
     username: formData.get("username"),
@@ -34,10 +34,10 @@ export async function login(prevState: unknown, formData: FormData) {
     formPayload.append('grant_type', 'password');
 
     // Get API URL - handle both client and server side
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 
-                      process.env.API_BASE_URL || 
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ||
+                      process.env.API_BASE_URL ||
                       'https://crm-dashboard-backend-rho.vercel.app';
-    
+
 
     // Make the API call
     const response = await fetch(`${apiBaseUrl}/auth/jwt/login`, {
@@ -52,18 +52,21 @@ export async function login(prevState: unknown, formData: FormData) {
 
     if (!response.ok) {
       console.log("API response not ok");
-      
- // Try to parse error response
-let errorData;
-try {
-  errorData = await response.json();
-  console.log("API error data:", errorData);
-} catch {
-  console.log("Could not parse error response as JSON");
-  const text = await response.text();
-  errorData = { detail: text || `Server returned ${response.status}` };
-}
-      return { 
+
+      // Read the response body only once
+      let errorData;
+      const responseText = await response.text();
+      console.log("Raw response text:", responseText);
+
+      try {
+        errorData = JSON.parse(responseText);
+        console.log("Parsed API error data:", errorData);
+      } catch {
+        console.log("Could not parse error response as JSON");
+        errorData = { detail: responseText || `Server returned ${response.status}` };
+      }
+
+      return {
         server_validation_error: getErrorMessage(errorData),
         status: response.status
       };
@@ -94,7 +97,7 @@ try {
       console.log("Redirect successful");
       throw err; // Re-throw to let Next.js handle the redirect
     }
-    
+
     console.error("Login error:", err);
     return {
       server_error: "An unexpected error occurred. Please try again later.",
