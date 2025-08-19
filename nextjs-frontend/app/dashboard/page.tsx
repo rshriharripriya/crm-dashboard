@@ -19,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { PageSizeSelector } from "@/components/page-size-selector";
 import { PagePagination } from "@/components/page-pagination";
+import StudentDirectory from "./StudentDirectory";
+import StudentDirectorySummary from "./StudentDirectorySummary";
 
 interface DashboardPageProps {
   searchParams: Promise<{
@@ -41,73 +43,23 @@ export default async function DashboardPage({
     <div>
       <h2 className="text-2xl font-semibold mb-6">Welcome to your Dashboard</h2>
       <p className="text-lg mb-6">
-        Here, you can see the overview of your items and manage them.
       </p>
 
-      <div className="mb-6">
-        <Link href="/dashboard/add-item">
-          <Button variant="outline" className="text-lg px-4 py-2">
-            Add New Item
-          </Button>
-        </Link>
-      </div>
 
-      <section className="p-6 bg-white rounded-lg shadow-lg mt-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Items</h2>
-          <PageSizeSelector currentSize={size} />
-        </div>
 
-        <Table className="min-w-full text-sm">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[120px]">Name</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead className="text-center">Quantity</TableHead>
-              <TableHead className="text-center">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {!items.items?.length ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center">
-                  No results.
-                </TableCell>
-              </TableRow>
-            ) : (
-              items.items.map((item, index) => (
-                <TableRow key={index}>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell>{item.description}</TableCell>
-                  <TableCell className="text-center">{item.quantity}</TableCell>
-                  <TableCell className="text-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger className="cursor-pointer p-1 text-gray-600 hover:text-gray-800">
-                        <span className="text-lg font-semibold">...</span>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="p-2">
-                        <DropdownMenuItem disabled={true}>
-                          Edit
-                        </DropdownMenuItem>
-                        <DeleteButton itemId={item.id} />
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+      {/* Student stats Section */}
+      <section className="p-6 bg-white rounded-lg shadow-lg mb-8">
+                <StudentDirectorySummary />
 
-        {/* Pagination Controls */}
-        <PagePagination
-          currentPage={page}
-          totalPages={totalPages}
-          pageSize={size}
-          totalItems={items.total || 0}
-          basePath="/dashboard"
-        />
       </section>
+
+        {/* Student Directory Section */}
+      <section className="p-6 bg-white rounded-lg shadow-lg mb-8">
+
+        <StudentDirectory />
+      </section>
+
+
     </div>
   );
 }

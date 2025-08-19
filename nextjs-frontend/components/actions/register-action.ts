@@ -21,13 +21,14 @@ export async function register(prevState: unknown, formData: FormData) {
 
   const { email, password } = validatedFields.data;
 
-  const input = {
+  try {
+     const input = {
     body: {
       email,
       password,
     },
   };
-  try {
+
     const { error } = await registerRegister(input);
     if (error) {
       return { server_validation_error: getErrorMessage(error) };

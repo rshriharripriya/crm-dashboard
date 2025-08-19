@@ -32,11 +32,11 @@ export default function DashboardLayout({
             className="flex items-center justify-center rounded-full"
           >
             <Image
-              src="/images/vinta.png"
-              alt="Vinta"
-              width={64}
-              height={64}
-              className="object-cover transition-transform duration-200 hover:scale-105"
+              src="/images/logo.png"
+              alt="SHP's dashboard"
+              width={100}
+              height={100}
+              className="object-cover transition-transform duration-200 hover:scale-105 m-0"
             />
           </Link>
           <Link
@@ -45,12 +45,7 @@ export default function DashboardLayout({
           >
             <List className="h-5 w-5" />
           </Link>
-          <Link
-            href="/customers"
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
-          >
-            <Users2 className="h-5 w-5" />
-          </Link>
+
         </div>
       </aside>
       <main className="ml-16 w-full p-8 bg-muted/40">
@@ -88,7 +83,7 @@ export default function DashboardLayout({
               <DropdownMenuContent align="end" side="bottom">
                 <DropdownMenuItem>
                   <Link
-                    href="/support"
+                    href="mailto:rshriharripriya19@gmail.com"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     Support

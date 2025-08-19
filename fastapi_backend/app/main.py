@@ -1,10 +1,10 @@
 from fastapi import FastAPI
-from fastapi_pagination import add_pagination
 from .schemas import UserCreate, UserRead, UserUpdate
 from .users import auth_backend, fastapi_users, AUTH_URL_PATH
 from fastapi.middleware.cors import CORSMiddleware
 from .utils import simple_generate_unique_route_id
 from app.routes.items import router as items_router
+from app.routes.students import router as students_router
 from app.config import settings
 
 app = FastAPI(
@@ -19,6 +19,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Include authentication and user management routes
@@ -50,4 +51,6 @@ app.include_router(
 
 # Include items routes
 app.include_router(items_router, prefix="/items")
-add_pagination(app)
+
+# Include students routes
+app.include_router(students_router, prefix="/students")
