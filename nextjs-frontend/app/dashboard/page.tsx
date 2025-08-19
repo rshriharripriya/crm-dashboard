@@ -52,7 +52,7 @@ export default async function DashboardPage({
                 <StudentDirectorySummary />
 
       </section>
-<h2 className="text-2xl font-semibold mb-6">Student Directory</h2>
+
         {/* Student Directory Section */}
       <section className="p-6 bg-white rounded-lg shadow-lg mb-8">
 

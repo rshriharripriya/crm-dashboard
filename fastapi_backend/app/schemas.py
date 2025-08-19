@@ -5,7 +5,6 @@ from fastapi_users import schemas
 from pydantic import BaseModel
 from uuid import UUID
 from typing import List, Optional
-from enum import Enum
 
 
 class UserRead(schemas.BaseUser[uuid.UUID]):
@@ -46,6 +45,7 @@ class StudentBase(BaseModel):
     application_status: str
     last_active: datetime | None = None
     tags: Optional[List[str]] = []
+    internal_notes: str | None = None
 
 
 class StudentCreate(StudentBase):
@@ -64,8 +64,10 @@ class StudentRead(StudentBase):
 class StudentTagsUpdate(BaseModel):
     tags: Optional[List[str]] = []
 
+
 class StudentStats(BaseModel):
     """Schema for student statistics response"""
+
     activeStudents: int
     applyingStage: int
     needsEssayHelp: int
@@ -74,3 +76,26 @@ class StudentStats(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# Communication Log Schemas
+class CommunicationLogBase(BaseModel):
+    type: str
+    content: str | None = None
+
+
+class CommunicationLogCreate(CommunicationLogBase):
+    student_id: UUID
+
+
+class CommunicationLogRead(CommunicationLogBase):
+    id: UUID
+    student_id: UUID
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class InternalNotesUpdate(BaseModel):
+    internal_notes: str | None = None

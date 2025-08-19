@@ -1,4 +1,3 @@
-// app/dashboard/student/[studentId]/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -17,7 +16,9 @@ import {
   User,
   Tag,
   X,
-  Send
+  Send,
+  Check,
+  Bot
 } from 'lucide-react';
 import { getTagColors } from '@/lib/constants/tagColors';
 
@@ -30,7 +31,54 @@ interface Student {
     application_status: string;
     last_active: string | null;
     tags: string[] | null;
+    internal_notes: string | null;
 }
+
+interface CommunicationLog {
+    id: string;
+    student_id: string;
+    type: string;
+    content: string | null;
+    timestamp: string;
+}
+
+interface Toast {
+    id: number;
+    message: string;
+    type: 'success' | 'error';
+}
+
+// Simple markdown renderer component
+const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
+    const renderMarkdown = (text: string) => {
+        return text
+            // Headers
+            .replace(/^### (.*$)/gm, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
+            .replace(/^## (.*$)/gm, '<h2 class="text-xl font-semibold mt-6 mb-3">$1</h2>')
+            .replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold mt-6 mb-4">$1</h1>')
+
+            // Bold and italic
+            .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+
+            // Lists
+            .replace(/^\* (.*$)/gm, '<li class="ml-4">• $1</li>')
+            .replace(/^- (.*$)/gm, '<li class="ml-4">• $1</li>')
+
+            // Line breaks
+            .replace(/\n\n/g, '</p><p class="mb-3">')
+            .replace(/\n/g, '<br/>');
+    };
+
+    const htmlContent = `<p class="mb-3">${renderMarkdown(content)}</p>`;
+
+    return (
+        <div
+            className="prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{ __html: htmlContent }}
+        />
+    );
+};
 
 const StudentProfile = () => {
     const { studentId } = useParams();
@@ -41,7 +89,28 @@ const StudentProfile = () => {
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [isEmailModalOpen, setIsEmailModalOpen] = useState<boolean>(false);
     const [emailContent, setEmailContent] = useState<string>("");
-    const [showToast, setShowToast] = useState<boolean>(false);
+    const [toasts, setToasts] = useState<Toast[]>([]);
+    const [isAddLogModalOpen, setIsAddLogModalOpen] = useState<boolean>(false);
+    const [communicationLogs, setCommunicationLogs] = useState<CommunicationLog[]>([]);
+    const [newLogType, setNewLogType] = useState<string>('Email');
+    const [newLogContent, setNewLogContent] = useState<string>('');
+    const [aiSummary, setAiSummary] = useState<string | null>(null);
+    const [isGeneratingSummary, setIsGeneratingSummary] = useState<boolean>(false);
+
+    const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+        const id = Date.now();
+        const newToast = { id, message, type };
+        setToasts(prev => [...prev, newToast]);
+
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            setToasts(prev => prev.filter(toast => toast.id !== id));
+        }, 3000);
+    };
+
+    const removeToast = (id: number) => {
+        setToasts(prev => prev.filter(toast => toast.id !== id));
+    };
 
     useEffect(() => {
         const fetchStudent = async () => {
@@ -53,6 +122,7 @@ const StudentProfile = () => {
                 const data: Student = await response.json();
                 setStudent(data);
                 setSelectedTags(data.tags || []);
+                setNotes(data.internal_notes || "");
                 setLoading(false);
             } catch (e: any) {
                 setError(e.message);
@@ -64,13 +134,42 @@ const StudentProfile = () => {
     }, [studentId]);
 
     useEffect(() => {
-        // Load mock notes
-        const initialNotes = [
-            { author: 'Team Member 1', content: 'Needs help with essay', timestamp: '2025-08-10T12:00:00' },
-            { author: 'Team Member 2', content: 'High intent student', timestamp: '2025-08-09T18:00:00' },
-        ].map((note) => `${note.author}: ${note.content} - ${note.timestamp}`).join("\n");
-        setNotes(initialNotes);
-    }, []);
+        const fetchCommunicationLogs = async () => {
+            try {
+                const response = await fetch(`http://localhost:8000/students/${studentId}/communications`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const data: CommunicationLog[] = await response.json();
+                setCommunicationLogs(data);
+            } catch (e: any) {
+                console.error("Failed to fetch communication logs:", e);
+            }
+        };
+
+        if (studentId) {
+            fetchCommunicationLogs();
+        }
+    }, [studentId]);
+
+    const fetchAiSummary = async () => {
+        setIsGeneratingSummary(true);
+        try {
+            const response = await fetch(`http://localhost:8000/students/${studentId}/ai-summary`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            const data = await response.json();
+            setAiSummary(data.summary);
+            showToast("AI Summary generated successfully!", 'success');
+        } catch (e: any) {
+            console.error("Failed to fetch AI summary:", e);
+            setAiSummary("Failed to generate AI summary. Please try again later.");
+            showToast("Failed to generate AI summary. Please try again.", 'error');
+        } finally {
+            setIsGeneratingSummary(false);
+        }
+    };
 
     const handleSendEmail = () => {
         // Initialize email content when modal opens
@@ -94,23 +193,61 @@ This email was sent from the student management system.`;
         setIsEmailModalOpen(true);
     };
 
-    const handleSendEmailConfirm = () => {
-        // Close modal and show toast
-        setIsEmailModalOpen(false);
-        setShowToast(true);
+    const handleSendEmailConfirm = async () => {
+        try {
+            // Send the email
+            const response = await fetch(`http://localhost:8000/students/${studentId}/email`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
 
-        // Hide toast after 3 seconds
-        setTimeout(() => {
-            setShowToast(false);
-        }, 3000);
+            if (!response.ok) {
+                throw new Error(`Failed to send email: ${response.status}`);
+            }
+
+            // Refresh communication logs
+            const logResponse = await fetch(`http://localhost:8000/students/${studentId}/communications`);
+            if (logResponse.ok) {
+                const logs: CommunicationLog[] = await logResponse.json();
+                setCommunicationLogs(logs);
+            }
+
+            // Close modal and show toast
+            setIsEmailModalOpen(false);
+            showToast(`Email sent successfully to ${student?.email}`, 'success');
+        } catch (error) {
+            console.error("Error sending email:", error);
+            showToast("Failed to send email. Please try again.", 'error');
+        }
     };
 
     const handleNotesChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         setNotes(event.target.value);
     };
 
-    const handleSaveNotes = () => {
-        alert("Notes saved!");
+    const handleSaveNotes = async () => {
+        try {
+            const response = await fetch(`http://localhost:8000/students/${studentId}/internal_notes`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ internal_notes: notes }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to save notes: ${response.status}`);
+            }
+
+            const updatedStudent: Student = await response.json();
+            setStudent(updatedStudent);
+            showToast("Notes saved successfully!", 'success');
+        } catch (error) {
+            console.error("Error saving notes:", error);
+            showToast("Failed to save notes. Please try again.", 'error');
+        }
     };
 
     const availableTags = [
@@ -141,23 +278,53 @@ This email was sent from the student management system.`;
                 }
             );
 
-            console.log("Response status:", response.status);
-            console.log("Response headers:", response.headers);
-
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error("Error response:", errorText);
                 throw new Error(`Failed to update tags: ${response.status} ${errorText}`);
             }
 
             const updatedStudent = await response.json();
             setStudent(updatedStudent);
-            console.log("Successfully updated student tags:", updatedStudent);
         } catch (e: any) {
             console.error("Tag update error:", e);
             // Revert UI on error
             setSelectedTags(student?.tags || []);
-            alert(`Error: ${e.message}`);
+            showToast(`Error: ${e.message}`, 'error');
+        }
+    };
+
+    const handleAddLog = async () => {
+        try {
+            const response = await fetch(`http://localhost:8000/students/${studentId}/communication`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    student_id: studentId,
+                    type: newLogType,
+                    content: newLogContent
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to add communication log: ${response.status}`);
+            }
+
+            const newLog: CommunicationLog = await response.json();
+
+            // Add the new log to the beginning of the logs array
+            setCommunicationLogs(prevLogs => [newLog, ...prevLogs]);
+
+            // Reset form and close modal
+            setNewLogType('Email');
+            setNewLogContent('');
+            setIsAddLogModalOpen(false);
+
+            showToast("Communication log added successfully!", 'success');
+        } catch (error) {
+            console.error("Error adding communication log:", error);
+            showToast("Failed to add communication log. Please try again.", 'error');
         }
     };
 
@@ -180,20 +347,89 @@ This email was sent from the student management system.`;
         { type: 'Document Submitted', timestamp: '2025-08-14T14:00:00' },
     ];
 
-    const communicationLog = [
-        { type: 'Email', content: 'Follow-up email sent', timestamp: '2025-08-13T16:00:00' },
-        { type: 'SMS', content: 'Reminder SMS sent', timestamp: '2025-08-12T09:00:00' },
-    ];
-
     const progress = Math.floor(Math.random() * 100);
 
     return (
         <>
+            {/* Toast Container - Fixed at top */}
+            <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 space-y-2">
+                {toasts.map((toast) => (
+                    <div
+                        key={toast.id}
+                        className={`${
+                            toast.type === 'success' 
+                                ? 'bg-green-600' 
+                                : 'bg-red-600'
+                        } text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-300 min-w-[300px]`}
+                    >
+                        <div className="flex items-center gap-2">
+                            {toast.type === 'success' ? (
+                                <Check className="h-4 w-4" />
+                            ) : (
+                                <X className="h-4 w-4" />
+                            )}
+                            <span className="text-sm">{toast.message}</span>
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeToast(toast.id)}
+                            className={`text-white ${
+                                toast.type === 'success' 
+                                    ? 'hover:bg-green-700' 
+                                    : 'hover:bg-red-700'
+                            } p-1 h-auto ml-auto`}
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                ))}
+            </div>
+
             <div className="container mx-auto py-8">
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-3xl font-bold">Student Profile</h1>
-                    <Button onClick={handleSendEmail}>Send Follow-up Email</Button>
+                    <div className="flex gap-2">
+                        <Button onClick={handleSendEmail}>Send Follow-up Email</Button>
+                        <Button
+                            onClick={fetchAiSummary}
+                            disabled={isGeneratingSummary}
+                            variant="secondary"
+                        >
+                            {isGeneratingSummary ? (
+                                <>
+                                    <span className="mr-2">Generating...</span>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                                </>
+                            ) : (
+                                <>
+                                    <Bot className="h-4 w-4 mr-2" />
+                                    Generate AI Summary
+                                </>
+                            )}
+                        </Button>
+                    </div>
                 </div>
+
+                {/* AI Summary Section with Markdown Rendering */}
+                {aiSummary && (
+                    <div className="mb-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Bot className="h-5 w-5" />
+                                    AI Summary
+                                </CardTitle>
+                                <CardDescription>
+                                    AI-generated insights about this student based on their profile and communications
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <MarkdownRenderer content={aiSummary} />
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left Column - Basic Info */}
@@ -212,9 +448,6 @@ This email was sent from the student management system.`;
                                         <div className="bg-gray-200 border-2 border-dashed rounded-xl w-32 h-32 flex items-center justify-center">
                                             <span className="text-gray-500">Profile Image</span>
                                         </div>
-                                        <Button variant="outline" size="sm" className="mt-3">
-                                            Change Photo
-                                        </Button>
                                     </div>
 
                                     {/* Student Details */}
@@ -341,7 +574,7 @@ This email was sent from the student management system.`;
                                                 />
                                                 <label
                                                     htmlFor={tag}
-                                                    className={`flex items-center rounded-full px-2.5 py-1 text-xs font-medium border transition-all duration-200 }`}
+                                                    className="flex items-center rounded-full px-2.5 py-1 text-xs font-medium border transition-all duration-200"
                                                 >
                                                     {tag}
                                                 </label>
@@ -374,25 +607,34 @@ This email was sent from the student management system.`;
 
                         {/* Communication Log */}
                         <Card>
-                            <CardHeader>
+                            <CardHeader className="flex flex-row items-center justify-between">
                                 <CardTitle>Communication Log</CardTitle>
+                                <Button
+                                    size="sm"
+                                    onClick={() => setIsAddLogModalOpen(true)}
+                                >
+                                    + Add Log
+                                </Button>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
-                                    {communicationLog.map((item, index) => (
-                                        <div key={index} className="border-l-2 border-gray-200 pl-4 py-1">
+                                    {communicationLogs.map((log) => (
+                                        <div key={log.id} className="border-l-2 border-gray-200 pl-4 py-1">
                                             <div className="flex justify-between">
-                                                <span className="font-medium">{item.type}</span>
+                                                <span className="font-medium">{log.type}</span>
                                                 <span className="text-sm text-gray-500">
-                                                    {new Date(item.timestamp).toLocaleDateString('en-US', {
+                                                    {new Date(log.timestamp).toLocaleDateString('en-US', {
                                                         month: 'short',
                                                         day: 'numeric'
                                                     })}
                                                 </span>
                                             </div>
-                                            <p className="text-sm text-gray-600 mt-1">{item.content}</p>
+                                            <p className="text-sm text-gray-600 mt-1">{log.content || 'No description'}</p>
                                         </div>
                                     ))}
+                                    {communicationLogs.length === 0 && (
+                                        <p className="text-sm text-gray-500">No communication logs yet.</p>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
@@ -457,23 +699,62 @@ This email was sent from the student management system.`;
                 </DialogContent>
             </Dialog>
 
-            {/* Toast Notification */}
-            {showToast && (
-                <div className="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 bg-green-300 rounded-full"></div>
-                        Email sent successfully to {student?.email}
+            {/* Add Log Modal */}
+            <Dialog open={isAddLogModalOpen} onOpenChange={setIsAddLogModalOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Add Communication Log</DialogTitle>
+                        <DialogDescription>
+                            Log a communication interaction with this student.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Type</label>
+                            <select
+                                value={newLogType}
+                                onChange={(e) => setNewLogType(e.target.value)}
+                                className="w-full p-2 border rounded-md"
+                            >
+                                <option value="Email">Email</option>
+                                <option value="SMS">SMS</option>
+                                <option value="Call">Call</option>
+                                <option value="Meeting">Meeting</option>
+                            </select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Description (Optional)</label>
+                            <Textarea
+                                value={newLogContent}
+                                onChange={(e) => setNewLogContent(e.target.value)}
+                                placeholder="Brief description of the communication..."
+                                className="min-h-[100px]"
+                                maxLength={200}
+                            />
+                            <p className="text-xs text-gray-500 text-right">
+                                {newLogContent.length}/200 characters
+                            </p>
+                        </div>
                     </div>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowToast(false)}
-                        className="text-white hover:bg-green-700 p-1 h-auto"
-                    >
-                        <X className="h-4 w-4" />
-                    </Button>
-                </div>
-            )}
+
+                    <div className="flex justify-end gap-3 pt-4 border-t">
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsAddLogModalOpen(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleAddLog}
+                            disabled={!newLogType}
+                        >
+                            Add Log
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </>
     );
 };

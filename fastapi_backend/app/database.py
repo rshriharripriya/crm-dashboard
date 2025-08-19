@@ -20,23 +20,24 @@ engine = create_async_engine(
         "command_timeout": 60,  # Add timeout for commands
         "server_settings": {
             "statement_timeout": "60000",  # 60 seconds in milliseconds
-            "client_encoding": "utf8"
-        }
-    }
+            "client_encoding": "utf8",
+        },
+    },
 )
 
 async_session_maker = async_sessionmaker(
-    engine,
-    expire_on_commit=False,
-    class_=AsyncSession
+    engine, expire_on_commit=False, class_=AsyncSession
 )
+
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_session_maker() as session:
         yield session
 
+
 async def get_user_db(session: AsyncSession = Depends(get_async_session)):
     yield SQLAlchemyUserDatabase(session, User)
+
 
 async def create_db_and_tables():
     async with engine.begin() as conn:

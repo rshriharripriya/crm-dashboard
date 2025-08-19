@@ -7,7 +7,6 @@ export default function Home() {
   return (
     <main className="flex flex-col w-full min-h-screen bg-gradient-to-br from-purple-900 via-gray-900 to-black text-white">
 
-      {/* ================= HERO / INTRO SECTION ================= */}
       <section className="flex flex-col items-center justify-center flex-1 relative overflow-hidden p-12">
 
         {/* Glow Background Effects */}
@@ -71,14 +70,13 @@ export default function Home() {
             <a href="https://rshriharripriya.vercel.app" target="_blank" className="flex items-center gap-2 hover:underline hover:scale-110 transition">
               <FaGlobe className="w-6 h-6 text-green-400" /> Portfolio
             </a>
-            <a href="#" target="_blank" className="flex items-center gap-2 hover:underline hover:scale-110 transition">
+            <a href="/Shri_Harri_Priya_Resume.pdf" target="_blank" className="flex items-center gap-2 hover:underline hover:scale-110 transition">
               <FaFileAlt className="w-6 h-6 text-yellow-400" /> Resume
             </a>
           </div>
         </div>
       </section>
 
-      {/* ================= PROJECT SECTION (DARK + GLASS) ================= */}
       <section className="w-full px-8 py-20 relative z-10">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-4xl font-bold text-center mb-6 text-blue-300">📊 Undergraduation CRM Dashboard</h1>

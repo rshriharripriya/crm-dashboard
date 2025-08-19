@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-from fastapi_pagination import add_pagination
 from .schemas import UserCreate, UserRead, UserUpdate
 from .users import auth_backend, fastapi_users, AUTH_URL_PATH
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,7 +19,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"]
+    expose_headers=["*"],
 )
 
 # Include authentication and user management routes

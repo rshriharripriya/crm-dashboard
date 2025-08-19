@@ -1008,6 +1008,58 @@
         }
       }
     },
+    "/students/{student_id}/internal_notes": {
+      "patch": {
+        "tags": [
+          "students"
+        ],
+        "summary": "Update Student Internal Notes",
+        "operationId": "update_student_internal_notes",
+        "parameters": [
+          {
+            "name": "student_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Student Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InternalNotesUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/students/{student_id}/tags": {
       "patch": {
         "tags": [
@@ -1069,6 +1121,157 @@
         ],
         "summary": "Send Follow Up Email",
         "operationId": "send_follow_up_email",
+        "parameters": [
+          {
+            "name": "student_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Student Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/students/{student_id}/communication": {
+      "post": {
+        "tags": [
+          "students"
+        ],
+        "summary": "Add Communication Log",
+        "description": "Add a communication log entry for a student",
+        "operationId": "add_communication_log",
+        "parameters": [
+          {
+            "name": "student_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Student Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunicationLogCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationLogRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/students/{student_id}/communications": {
+      "get": {
+        "tags": [
+          "students"
+        ],
+        "summary": "Get Student Communications",
+        "description": "Get communication logs for a student, limited to last N entries",
+        "operationId": "get_student_communications",
+        "parameters": [
+          {
+            "name": "student_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Student Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 3,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CommunicationLogRead"
+                  },
+                  "title": "Response Students-Get Student Communications"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/students/{student_id}/ai-summary": {
+      "get": {
+        "tags": [
+          "students"
+        ],
+        "summary": "Get Student Ai Summary",
+        "description": "Generate an AI summary for a specific student using Groq/Llama",
+        "operationId": "get_student_ai_summary",
         "parameters": [
           {
             "name": "student_id",
@@ -1182,6 +1385,78 @@
         ],
         "title": "Body_auth-verify:verify"
       },
+      "CommunicationLogCreate": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "student_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Student Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "student_id"
+        ],
+        "title": "CommunicationLogCreate"
+      },
+      "CommunicationLogRead": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "student_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Student Id"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "id",
+          "student_id",
+          "timestamp"
+        ],
+        "title": "CommunicationLogRead"
+      },
       "ErrorModel": {
         "properties": {
           "detail": {
@@ -1217,6 +1492,23 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "InternalNotesUpdate": {
+        "properties": {
+          "internal_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Internal Notes"
+          }
+        },
+        "type": "object",
+        "title": "InternalNotesUpdate"
       },
       "ItemCreate": {
         "properties": {
@@ -1428,6 +1720,17 @@
             ],
             "title": "Tags",
             "default": []
+          },
+          "internal_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Internal Notes"
           }
         },
         "type": "object",
@@ -1500,6 +1803,17 @@
             ],
             "title": "Tags",
             "default": []
+          },
+          "internal_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Internal Notes"
           }
         },
         "type": "object",
@@ -1572,6 +1886,17 @@
             ],
             "title": "Tags",
             "default": []
+          },
+          "internal_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Internal Notes"
           },
           "id": {
             "type": "string",
