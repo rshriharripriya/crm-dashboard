@@ -14,6 +14,7 @@ app = FastAPI(
     openapi_url=settings.OPENAPI_URL,
 )
 
+
 # Middleware for CORS configuration
 app.add_middleware(
     CORSMiddleware,
