@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { loginSchema } from "@/lib/definitions";
 import { getErrorMessage } from "@/lib/utils";
 
-
 export async function login(prevState: unknown, formData: FormData) {
   console.log("Login action started");
 
@@ -26,6 +25,8 @@ export async function login(prevState: unknown, formData: FormData) {
   const { username, password } = validatedFields.data;
   console.log("Validated data:", { username });
 
+  // --- MOVED OUT OF TRY BLOCK ---
+  let response;
   try {
     // Prepare form data for JWT login
     const formPayload = new URLSearchParams();
@@ -33,27 +34,23 @@ export async function login(prevState: unknown, formData: FormData) {
     formPayload.append('password', password);
     formPayload.append('grant_type', 'password');
 
-    // Get API URL - handle both client and server side
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ||
                       process.env.API_BASE_URL ||
                       'https://crm-dashboard-backend-rho.vercel.app';
 
-
     // Make the API call
-    const response = await fetch(`${apiBaseUrl}/auth/jwt/login`, {
+    response = await fetch(`${apiBaseUrl}/auth/jwt/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: formPayload.toString(), // Convert URLSearchParams to string
+      body: formPayload.toString(),
       cache: 'no-store'
     });
     console.log("API response received:", response.status, response.statusText);
 
     if (!response.ok) {
       console.log("API response not ok");
-
-      // Read the response body only once
       let errorData;
       const responseText = await response.text();
       console.log("Raw response text:", responseText);
@@ -65,43 +62,40 @@ export async function login(prevState: unknown, formData: FormData) {
         console.log("Could not parse error response as JSON");
         errorData = { detail: responseText || `Server returned ${response.status}` };
       }
-
+      // Return early on error
       return {
         server_validation_error: getErrorMessage(errorData),
         status: response.status
       };
     }
 
-    // Handle successful login
-    const data = await response.json();
-    const { access_token } = data;
-
-    const cookieStore = await cookies();
-    console.log("Setting cookie");
-    cookieStore.set('accessToken', access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 1 week
-    });
-    console.log("Cookie set successfully");
-
-    // Redirect to dashboard
-    console.log("Redirecting to dashboard");
-    redirect("/dashboard");
-
   } catch (err) {
-    // Check if the error is a Next.js redirect error
-    if (err instanceof Error && err.message.includes('NEXT_REDIRECT')) {
-      console.log("Redirect successful");
-      throw err; // Re-throw to let Next.js handle the redirect
-    }
-
+    // This catch block now ONLY handles fetch or network errors
     console.error("Login error:", err);
     return {
       server_error: "An unexpected error occurred. Please try again later.",
       error_details: err instanceof Error ? err.message : String(err)
     };
   }
+
+  // --- SUCCESS PATH IS OUTSIDE THE TRY/CATCH ---
+  // If we get here, the login was successful and there were no errors.
+
+  const data = await response.json();
+  const { access_token } = data;
+
+  const cookieStore = await cookies();
+  console.log("Setting cookie");
+  cookieStore.set('accessToken', access_token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 7, // 1 week
+  });
+  console.log("Cookie set successfully");
+
+  // Now redirect. This will throw, but there's no catch block to stop it.
+  console.log("Redirecting to dashboard");
+  redirect("/dashboard");
 }
