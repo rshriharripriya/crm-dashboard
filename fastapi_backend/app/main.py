@@ -58,12 +58,7 @@ async def global_exception_handler(request: Request, exc: Exception):
             content={"detail": "Database service temporarily unavailable."},
         )
 
-    # For development, show the actual error
-    if settings.DEBUG:
-        return JSONResponse(
-            status_code=500,
-            content={"detail": f"Internal server error: {error_message}"},
-        )
+
 
     return JSONResponse(
         status_code=500,
