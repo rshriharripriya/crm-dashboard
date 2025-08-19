@@ -53,17 +53,16 @@ export async function login(prevState: unknown, formData: FormData) {
     if (!response.ok) {
       console.log("API response not ok");
       
-      // Try to parse error response
-      let errorData;
-      try {
-        errorData = await response.json();
-        console.log("API error data:", errorData);
-      } catch (e) {
-        console.log("Could not parse error response as JSON");
-        const text = await response.text();
-        errorData = { detail: text || `Server returned ${response.status}` };
-      }
-      
+ // Try to parse error response
+let errorData;
+try {
+  errorData = await response.json();
+  console.log("API error data:", errorData);
+} catch {
+  console.log("Could not parse error response as JSON");
+  const text = await response.text();
+  errorData = { detail: text || `Server returned ${response.status}` };
+}
       return { 
         server_validation_error: getErrorMessage(errorData),
         status: response.status
