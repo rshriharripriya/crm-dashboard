@@ -6,58 +6,65 @@ from fastapi_users.db import SQLAlchemyUserDatabase
 from .models import Base, User
 from .config import settings
 import ssl
+import asyncio
 
 # Convert URL if needed
 db_url = settings.DATABASE_URL
 
 # For Supabase/hosted PostgreSQL with SSL, we need to handle SSL properly
-# Remove sslmode from URL and handle SSL in connect_args
 if "sslmode=require" in db_url:
     db_url = db_url.replace("?sslmode=require", "").replace("&sslmode=require", "")
 
 # Create SSL context for asyncpg
 ssl_context = ssl.create_default_context()
-ssl_context.check_hostname = False  # For hosted services like Supabase
-ssl_context.verify_mode = ssl.CERT_NONE  # For development; use CERT_REQUIRED for production
+ssl_context.check_hostname = False
+ssl_context.verify_mode = ssl.CERT_NONE
 
-# --- CRITICAL FIX: DO NOT DISABLE THE POOL ---
-# Create async engine with proper SSL handling
-# Let SQLAlchemy handle connection pooling, which is necessary for async
+# VERCEL FIX: Smaller pool sizes for serverless environment
 engine = create_async_engine(
     db_url,
-    # REMOVED: poolclass=None,  # <-- THIS WAS THE MAIN PROBLEM
-    # Let SQLAlchemy use its default async pool which works with asyncpg
-    echo=True,  # Optional: helps with debugging SQL queries
+    echo=False,  # Disable SQL logging in production
     connect_args={
-        "ssl": ssl_context,  # Use SSL context instead of sslmode
-        # REMOVED: Disabling caches can cause more problems than it solves
-        # "statement_cache_size": 0,  # Let asyncpg handle caching
-        # "prepared_statement_cache_size": 0, # Let asyncpg handle caching
-        "command_timeout": 60,  # Add timeout for commands
+        "ssl": ssl_context,
+        "command_timeout": 30,  # Reduced timeout for serverless
+        "server_settings": {
+            "application_name": "fastapi_app",
+        },
     },
-    # Optional: Configure pool settings for better performance/stability
-    pool_size=20,           # Maximum number of connections in pool
-    max_overflow=10,        # Maximum number of connections beyond pool_size
-    pool_timeout=30,        # Seconds to wait for a connection from pool
-    pool_recycle=1800,      # Recycle connections after 30 minutes (1800 sec)
-    pool_pre_ping=True,     # Test connections for health before using them
+    # CRITICAL: Smaller pool settings for Vercel/serverless
+    pool_size=5,            # Reduced from 20
+    max_overflow=5,         # Reduced from 10
+    pool_timeout=10,        # Reduced timeout
+    pool_recycle=300,       # 5 minutes instead of 30
+    pool_pre_ping=True,
+    # IMPORTANT: Add pool reset on return
+    pool_reset_on_return="commit",
 )
 
 async_session_maker = async_sessionmaker(
     engine,
     expire_on_commit=False,
     class_=AsyncSession,
-    autoflush=False  # Added for better session control
+    autoflush=False
 )
 
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session_maker() as session:
-        try:
-            yield session
-        finally:
-            # Explicitly close the session to ensure cleanup
-            await session.close()  # <-- CRITICAL: This ensures the connection is returned to the pool
+    session = None
+    try:
+        session = async_session_maker()
+        yield session
+    except Exception as e:
+        if session:
+            await session.rollback()
+        raise
+    finally:
+        if session:
+            try:
+                await session.close()
+            except Exception:
+                # If session close fails, don't let it crash the app
+                pass
 
 
 async def get_user_db(session: AsyncSession = Depends(get_async_session)):
@@ -65,5 +72,19 @@ async def get_user_db(session: AsyncSession = Depends(get_async_session)):
 
 
 async def create_db_and_tables():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    """Create database tables - use carefully in production"""
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception as e:
+        print(f"Error creating tables: {e}")
+        # Don't let table creation errors crash the app startup
+
+
+# VERCEL FIX: Add cleanup function for graceful shutdown
+async def close_db():
+    """Close the database engine properly"""
+    try:
+        await engine.dispose()
+    except Exception:
+        pass  # Ignore cleanup errors
