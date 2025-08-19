@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:3000"
 
     # CORS
-    CORS_ORIGINS: Set[str]
+    CORS_ORIGINS='["*"]'
 
     # GROQ
     GROQ_API_KEY: str
