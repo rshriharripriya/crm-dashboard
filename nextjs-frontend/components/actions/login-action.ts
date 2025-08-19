@@ -24,7 +24,7 @@ export async function login(prevState: unknown, formData: FormData) {
   }
 
   const { username, password } = validatedFields.data;
-  console.log("Validated data:", { username, password });
+  console.log("Validated data:", { username });
 
   try {
     // Prepare form data for JWT login
@@ -32,29 +32,46 @@ export async function login(prevState: unknown, formData: FormData) {
     formPayload.append('username', username);
     formPayload.append('password', password);
     formPayload.append('grant_type', 'password');
-    console.log("Form payload prepared:", formPayload.toString());
+
+    // Get API URL - handle both client and server side
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 
+                      process.env.API_BASE_URL || 
+                      'https://crm-dashboard-backend-rho.vercel.app';
+    
 
     // Make the API call
-    const response = await fetch(`${process.env.API_BASE_URL}/auth/jwt/login`, {
+    const response = await fetch(`${apiBaseUrl}/auth/jwt/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: formPayload,
+      body: formPayload.toString(), // Convert URLSearchParams to string
       cache: 'no-store'
     });
     console.log("API response received:", response.status, response.statusText);
 
     if (!response.ok) {
       console.log("API response not ok");
-      const errorData = await response.json();
-      console.log("API error data:", errorData);
-      return { server_validation_error: getErrorMessage(errorData) };
+      
+      // Try to parse error response
+      let errorData;
+      try {
+        errorData = await response.json();
+        console.log("API error data:", errorData);
+      } catch (e) {
+        console.log("Could not parse error response as JSON");
+        const text = await response.text();
+        errorData = { detail: text || `Server returned ${response.status}` };
+      }
+      
+      return { 
+        server_validation_error: getErrorMessage(errorData),
+        status: response.status
+      };
     }
 
     // Handle successful login
     const data = await response.json();
-    console.log("API response data:", data);
     const { access_token } = data;
 
     const cookieStore = await cookies();
@@ -70,25 +87,19 @@ export async function login(prevState: unknown, formData: FormData) {
 
     // Redirect to dashboard
     console.log("Redirecting to dashboard");
-    try {
-      redirect("/dashboard");
-    } catch (redirectError) {
-      // This is expected behavior for Next.js redirect in Server Actions
-      // We can re-throw it to let Next.js handle it
-      console.log("Redirect error (expected):", redirectError);
-      throw redirectError;
-    }
+    redirect("/dashboard");
 
   } catch (err) {
     // Check if the error is a Next.js redirect error
-    if (err instanceof Error && err.message === 'NEXT_REDIRECT') {
-      // Re-throw the redirect error so Next.js can handle it
-      throw err;
+    if (err instanceof Error && err.message.includes('NEXT_REDIRECT')) {
+      console.log("Redirect successful");
+      throw err; // Re-throw to let Next.js handle the redirect
     }
     
     console.error("Login error:", err);
     return {
       server_error: "An unexpected error occurred. Please try again later.",
+      error_details: err instanceof Error ? err.message : String(err)
     };
   }
 }
