@@ -1,3 +1,4 @@
+# users.py
 import uuid
 import re
 from typing import Optional
@@ -7,7 +8,7 @@ from fastapi_users.authentication import AuthenticationBackend, BearerTransport,
 from fastapi_users.db import SQLAlchemyUserDatabase
 
 from .config import settings
-from .database import get_user_db  # This imports your correct dependency
+from .database import get_user_db
 from .email import send_reset_password_email
 from .models import User
 from .schemas import UserCreate
@@ -60,7 +61,6 @@ auth_backend = AuthenticationBackend(
 fastapi_users = FastAPIUsers[User, uuid.UUID](
     get_user_manager,
     [auth_backend],
-    get_user_db=get_user_db
 )
 
 current_active_user = fastapi_users.current_user(active=True)
