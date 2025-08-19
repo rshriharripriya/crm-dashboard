@@ -21,16 +21,7 @@ import {
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { getTagColors } from "@/lib/constants/tagColors";
-
-interface Student {
-    id: string;
-    name: string;
-    email: string;
-    country: string | null;
-    application_status: string;
-    last_active: string | null;
-    tags: string[] | null;
-}
+import { getStudents, Student } from '@/lib/api/students'; // Import the API function and type
 
 const predefinedTags = [
     "Students not contacted in 7 days",
@@ -51,19 +42,14 @@ const StudentDirectory: React.FC = () => {
     useEffect(() => {
         const fetchStudents = async () => {
             try {
-                const response = await fetch('http://localhost:8000/students');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                const data: Student[] = await response.json();
+                const data = await getStudents(); // Use the API function
                 setStudents(data);
                 setLoading(false);
             } catch (e: unknown) {
-
-  if (e instanceof Error) {
-      setError(e.message);
-      setLoading(false);
-  }
+                if (e instanceof Error) {
+                    setError(e.message);
+                    setLoading(false);
+                }
             }
         };
 

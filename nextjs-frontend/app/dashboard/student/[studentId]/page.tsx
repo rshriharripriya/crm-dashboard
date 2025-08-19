@@ -1,3 +1,4 @@
+// page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -21,35 +22,22 @@ import {
   Bot
 } from 'lucide-react';
 import { getTagColors } from '@/lib/constants/tagColors';
-
-interface Student {
-    id: string;
-    name: string;
-    email: string;
-    phone: string | null;
-    country: string | null;
-    application_status: string;
-    last_active: string | null;
-    tags: string[] | null;
-    internal_notes: string | null;
-}
-
-interface CommunicationLog {
-    id: string;
-    student_id: string;
-    type: string;
-    content: string | null;
-    timestamp: string;
-}
+import {
+  getStudentProfile,
+  getCommunicationLogs,
+  getAiSummary,
+  sendFollowUpEmail,
+  updateStudentNotes,
+  updateStudentTags,
+  addCommunicationLog,
+  StudentProfile as StudentProfileType,
+  CommunicationLog
+} from '@/lib/api/students'; // Import API functions and types
 
 interface Toast {
     id: number;
     message: string;
     type: 'success' | 'error';
-}
-
-interface AiSummaryResponse {
-    summary: string;
 }
 
 // Simple markdown renderer component
@@ -86,7 +74,7 @@ const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
 
 const StudentProfile = () => {
     const { studentId } = useParams();
-    const [student, setStudent] = useState<Student | null>(null);
+    const [student, setStudent] = useState<StudentProfileType | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [notes, setNotes] = useState<string>("");
@@ -119,20 +107,16 @@ const StudentProfile = () => {
     useEffect(() => {
         const fetchStudent = async () => {
             try {
-                const response = await fetch(`http://localhost:8000/students/${studentId}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                const data: Student = await response.json();
+                const data = await getStudentProfile(studentId as string);
                 setStudent(data);
                 setSelectedTags(data.tags || []);
                 setNotes(data.internal_notes || "");
                 setLoading(false);
             } catch (error: unknown) {
-                  if (error instanceof Error) {
-                      setError(error.message);
-                      setLoading(false);
-                  }
+                if (error instanceof Error) {
+                    setError(error.message);
+                    setLoading(false);
+                }
             }
         };
 
@@ -142,16 +126,13 @@ const StudentProfile = () => {
     useEffect(() => {
         const fetchCommunicationLogs = async () => {
             try {
-                const response = await fetch(`http://localhost:8000/students/${studentId}/communications`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                const data: CommunicationLog[] = await response.json();
+                const data = await getCommunicationLogs(studentId as string);
                 setCommunicationLogs(data);
             } catch (error: unknown) {
-                  if (error instanceof Error) {
-                console.error("Failed to fetch communication logs:", error);
-            }}
+                if (error instanceof Error) {
+                    console.error("Failed to fetch communication logs:", error);
+                }
+            }
         };
 
         if (studentId) {
@@ -162,12 +143,7 @@ const StudentProfile = () => {
     const fetchAiSummary = async () => {
         setIsGeneratingSummary(true);
         try {
-            const response = await fetch(`http://localhost:8000/students/${studentId}/ai-summary`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            const data: AiSummaryResponse = await response.json();
-
+            const data = await getAiSummary(studentId as string);
             setAiSummary(data.summary);
             showToast("AI Summary generated successfully!", 'success');
         } catch (error: unknown) {
@@ -204,23 +180,11 @@ This email was sent from the student management system.`;
     const handleSendEmailConfirm = async () => {
         try {
             // Send the email
-            const response = await fetch(`http://localhost:8000/students/${studentId}/email`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to send email: ${response.status}`);
-            }
+            await sendFollowUpEmail(studentId as string);
 
             // Refresh communication logs
-            const logResponse = await fetch(`http://localhost:8000/students/${studentId}/communications`);
-            if (logResponse.ok) {
-                const logs: CommunicationLog[] = await logResponse.json();
-                setCommunicationLogs(logs);
-            }
+            const logs = await getCommunicationLogs(studentId as string);
+            setCommunicationLogs(logs);
 
             // Close modal and show toast
             setIsEmailModalOpen(false);
@@ -237,19 +201,7 @@ This email was sent from the student management system.`;
 
     const handleSaveNotes = async () => {
         try {
-            const response = await fetch(`http://localhost:8000/students/${studentId}/internal_notes`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ internal_notes: notes }),
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to save notes: ${response.status}`);
-            }
-
-            const updatedStudent: Student = await response.json();
+            const updatedStudent = await updateStudentNotes(studentId as string, notes);
             setStudent(updatedStudent);
             showToast("Notes saved successfully!", 'success');
         } catch (error) {
@@ -273,25 +225,7 @@ This email was sent from the student management system.`;
         setSelectedTags(newTags);
 
         try {
-            const response = await fetch(
-                `http://localhost:8000/students/${studentId}/tags`,
-                {
-                    method: "PATCH",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        tags: newTags
-                    }),
-                }
-            );
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to update tags: ${response.status} ${errorText}`);
-            }
-
-            const updatedStudent = await response.json();
+            const updatedStudent = await updateStudentTags(studentId as string, newTags);
             setStudent(updatedStudent);
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -304,23 +238,11 @@ This email was sent from the student management system.`;
 
     const handleAddLog = async () => {
         try {
-            const response = await fetch(`http://localhost:8000/students/${studentId}/communication`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    student_id: studentId,
-                    type: newLogType,
-                    content: newLogContent
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to add communication log: ${response.status}`);
-            }
-
-            const newLog: CommunicationLog = await response.json();
+            const newLog = await addCommunicationLog(
+                studentId as string,
+                newLogType,
+                newLogContent
+            );
 
             // Add the new log to the beginning of the logs array
             setCommunicationLogs(prevLogs => [newLog, ...prevLogs]);

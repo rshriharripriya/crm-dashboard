@@ -3,6 +3,7 @@
 
 <p align="center">
   A lightweight internal CRM dashboard for managing student interactions on undergraduation.com.
+
 </p>
 
 <p align="center">
@@ -87,3 +88,6 @@ This project was made on top of the nextjs-fastapi-template (open-source), which
 *   Link to GitHub repo with code
 *   README file explaining setup
 
+## Note
+
+Normally I like to create modular frontend applications, with reusable components, but I know that someone is going to review this code so for their ease, some frontend pages are not component based, soley for the purpose of easy reviewing 
