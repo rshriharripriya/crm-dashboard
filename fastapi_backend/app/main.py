@@ -1,11 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import JSONResponse
 from .schemas import UserCreate, UserRead, UserUpdate
-from .users import auth_backend, fastapi_users, AUTH_URL_PATH
+from .users import auth_backend, fastapi_users, AUTH_URL_PATH, UserManager
 from fastapi.middleware.cors import CORSMiddleware
 from .utils import simple_generate_unique_route_id
 from app.routes.items import router as items_router
 from app.routes.students import router as students_router
 from app.config import settings
+from fastapi_users import InvalidPasswordException
 
 app = FastAPI(
     generate_unique_id_function=simple_generate_unique_route_id,
@@ -21,6 +23,15 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+@app.exception_handler(InvalidPasswordException)
+async def invalid_password_exception_handler(
+    request: Request, exc: InvalidPasswordException
+):
+    return JSONResponse(
+        status_code=400,
+        content={"detail": exc.reason},
+    )
 
 # Include authentication and user management routes
 app.include_router(
