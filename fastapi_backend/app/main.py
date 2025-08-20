@@ -21,14 +21,25 @@ app = FastAPI(
     openapi_url=settings.OPENAPI_URL,
 )
 
-# Middleware for CORS configuration
+# Enhanced CORS middleware for Vercel deployment
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"],
+    allow_headers=[
+        "Accept",
+        "Accept-Language",
+        "Content-Language",
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "Origin",
+        "Cache-Control",
+        "Pragma"
+    ],
     expose_headers=["*"],
+    max_age=86400,  # Cache preflight for 24 hours
 )
 
 
