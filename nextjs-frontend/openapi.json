@@ -836,7 +836,7 @@
           "students"
         ],
         "summary": "Get Student Stats",
-        "description": "Get student statistics with:\n- Active students = last_active within 6 months\n- All counts based on active students only\n- Exact tag matching from enum values\n- Proper application status matching",
+        "description": "Get student statistics with event loop protection",
         "operationId": "get_student_stats",
         "responses": {
           "200": {
@@ -1066,7 +1066,7 @@
           "students"
         ],
         "summary": "Update Student Tags",
-        "description": "Update student tags",
+        "description": "Update student tags with event loop protection",
         "operationId": "update_student_tags",
         "parameters": [
           {
@@ -1299,6 +1299,106 @@
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/students/health": {
+      "get": {
+        "tags": [
+          "students"
+        ],
+        "summary": "Students Health",
+        "description": "Health check for students service",
+        "operationId": "students_health",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/students/ping": {
+      "get": {
+        "tags": [
+          "students"
+        ],
+        "summary": "Ping",
+        "description": "Simple ping endpoint",
+        "operationId": "ping",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health Check",
+        "description": "Enhanced health check with database connectivity",
+        "operationId": "health_check",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": [
+          "root"
+        ],
+        "summary": "Read Root",
+        "description": "Root endpoint with system info",
+        "operationId": "read_root",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/db-status": {
+      "get": {
+        "tags": [
+          "diagnostics"
+        ],
+        "summary": "Database Status",
+        "description": "Database diagnostic endpoint",
+        "operationId": "database_status",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           }

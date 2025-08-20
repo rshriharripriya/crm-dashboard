@@ -9,8 +9,12 @@ from app.routes.items import router as items_router
 from app.routes.students import router as students_router
 from app.config import settings
 from fastapi_users import InvalidPasswordException
-from .database import close_db
+from .database import check_database_health
+import logging
 
+# Set up logging for better debugging in serverless
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     generate_unique_id_function=simple_generate_unique_route_id,
@@ -38,28 +42,45 @@ async def invalid_password_exception_handler(
     )
 
 
-# VERCEL FIX: Add global exception handler for event loop issues
+# Enhanced exception handler for serverless database issues
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     error_message = str(exc)
 
-    # Handle specific async/event loop errors
+    # Log the error for debugging
+    logger.error(f"Unhandled exception on {request.url}: {error_message}")
+
+    # Handle specific serverless/database errors
     if "Event loop is closed" in error_message:
         return JSONResponse(
-            status_code=500,
-            content={"detail": "Database connection error. Please try again."},
+            status_code=503,  # Service Unavailable
+            content={"detail": "Service temporarily unavailable. Please retry."},
+        )
+
+    # Handle connection timeouts specifically
+    if any(keyword in error_message.lower() for keyword in
+           ["timeout", "timed out", "connection timeout"]):
+        return JSONResponse(
+            status_code=504,  # Gateway Timeout
+            content={"detail": "Database request timed out. Please try again."},
         )
 
     # Handle other database-related errors
     if any(keyword in error_message.lower() for keyword in
-           ["connection", "database", "pool", "timeout", "asyncpg"]):
+           ["connection", "database", "pool", "asyncpg", "postgresql"]):
         return JSONResponse(
-            status_code=500,
+            status_code=503,  # Service Unavailable
             content={"detail": "Database service temporarily unavailable."},
         )
 
+    # Handle serverless function limits
+    if "execution time limit" in error_message.lower():
+        return JSONResponse(
+            status_code=504,
+            content={"detail": "Request processing time exceeded. Please try a simpler request."},
+        )
 
-
+    # Generic server error
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal server error"},
@@ -100,37 +121,78 @@ app.include_router(items_router, prefix="/items")
 app.include_router(students_router, prefix="/students")
 
 
-# VERCEL FIX: Add startup and shutdown events
+# Serverless-optimized startup - NO database calls for speed
 @app.on_event("startup")
 async def startup_event():
-    """Initialize the application"""
+    """
+    Minimal startup for serverless - avoid any database calls for speed
+    """
     try:
-        # Only create tables if needed (be careful in production)
-        # await create_db_and_tables()  # Uncomment if needed
-        pass
+        logger.info("FastAPI application starting up...")
+
+        # NO database health check on startup - it slows everything down
+        # Database connections are tested on first actual request
+
+        logger.info("Application startup completed")
+
     except Exception as e:
-        print(f"Startup error: {e}")
-        # Don't crash the app on startup errors
+        logger.error(f"Startup error: {e}")
+        # Don't crash the app on startup errors in serverless
 
 
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Clean up resources on shutdown"""
-    try:
-        await close_db()
-    except Exception:
-        pass  # Ignore cleanup errors during shutdown
+# No shutdown event needed for NullPool serverless setup
+# Vercel may not reliably call shutdown events anyway
 
-
-# VERCEL FIX: Add health check endpoint
+# Enhanced health check with database status
 @app.get("/health", tags=["health"])
 async def health_check():
-    """Simple health check endpoint"""
-    return {"status": "healthy", "message": "API is running"}
+    """Enhanced health check with database connectivity"""
+    try:
+        # Quick database check
+        db_healthy = await check_database_health()
+
+        return {
+            "status": "healthy" if db_healthy else "degraded",
+            "api": "running",
+            "database": "connected" if db_healthy else "disconnected",
+            "message": "API is running with NullPool serverless database configuration"
+        }
+    except Exception as e:
+        logger.error(f"Health check error: {e}")
+        return {
+            "status": "unhealthy",
+            "api": "running",
+            "database": "error",
+            "message": f"Health check failed: {str(e)}"
+        }
 
 
-# VERCEL FIX: Add root endpoint
+# Root endpoint
 @app.get("/", tags=["root"])
 async def read_root():
-    """Root endpoint"""
-    return {"message": "CRM Dashboard API", "status": "running"}
+    """Root endpoint with system info"""
+    return {
+        "message": "CRM Dashboard API",
+        "status": "running",
+        "environment": "serverless",
+        "database": "NullPool configuration"
+    }
+
+
+# Additional endpoint for database diagnostics (useful for debugging)
+@app.get("/db-status", tags=["diagnostics"])
+async def database_status():
+    """Database diagnostic endpoint"""
+    try:
+        is_healthy = await check_database_health()
+        return {
+            "database_healthy": is_healthy,
+            "connection_type": "NullPool (serverless)",
+            "note": "Each request creates a fresh database connection"
+        }
+    except Exception as e:
+        return {
+            "database_healthy": False,
+            "error": str(e),
+            "connection_type": "NullPool (serverless)"
+        }
