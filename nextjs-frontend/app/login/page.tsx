@@ -64,12 +64,12 @@ export default function Page() {
                 className="border-gray-300 dark:border-gray-600"
               />
               <FieldError state={state} field="password" />
-              <Link
-                href="/password-recovery"
-                className="ml-auto inline-block text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-500"
-              >
-                Forgot your password?
-              </Link>
+              {/*<Link*/}
+              {/*  href="/password-recovery"*/}
+              {/*  className="ml-auto inline-block text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-500"*/}
+              {/*>*/}
+              {/*  Forgot your password?*/}
+              {/*</Link>*/}
             </div>
             <SubmitButton text="Sign In" />
             <FormError state={state} />
