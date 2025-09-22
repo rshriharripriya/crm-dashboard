@@ -3,7 +3,6 @@
 
 <p align="center">
   A lightweight internal CRM dashboard for managing student interactions on undergraduation.com.
-
 </p>
 
 <p align="center">
@@ -21,6 +20,8 @@
 ## Introduction
 
 This project aims to build a basic internal-facing CRM-style web dashboard to help the Undergraduation team manage student interactions, track their progress, and log communication history. This will provide a centralized view of each student’s journey on the platform.
+
+[Live demo](https://crm-dashboard-gray-one.vercel.app/dashboard)
 
 ## Objective
 
