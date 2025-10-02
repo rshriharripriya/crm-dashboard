@@ -79,10 +79,9 @@ export default function Home() {
 
       <section className="w-full px-8 py-20 relative z-10">
         <div className="max-w-5xl mx-auto">
-          <h1 className="text-4xl font-bold text-center mb-6 text-blue-300">📊 Undergraduation CRM Dashboard</h1>
+          <h1 className="text-4xl font-bold text-center mb-6 text-blue-300">📊 CRM Dashboard</h1>
           <p className="text-center text-lg text-gray-300 mb-12">
-            A lightweight internal CRM dashboard for managing student interactions on undergraduation.com.
-          </p>
+A lightweight internal CRM dashboard for organizing student communications and application workflows.          </p>
 
           {/* README-style nav links */}
           <div className="flex flex-wrap justify-center gap-4 mb-16">
@@ -97,7 +96,9 @@ export default function Home() {
           <div className="grid gap-8">
             <div id="introduction" className="bg-white/5 backdrop-blur-md shadow-lg rounded-2xl p-6 border border-white/10">
               <h2 className="text-2xl font-bold mb-3 text-pink-300">Introduction</h2>
-              <p className="text-gray-200">This project aims to build a basic internal-facing CRM-style web dashboard to help the Undergraduation team manage student interactions, track their progress, and log communication history. This will provide a centralized view of each student’s journey on the platform.</p>
+              <p className="text-gray-200">
+                This project aims to build a basic internal-facing CRM-style web dashboard to help the Application Support Team manage student interactions, track progress, and log communication history.                    
+              </p>
             </div>
 
             <div id="objective" className="bg-white/5 backdrop-blur-md shadow-lg rounded-2xl p-6 border border-white/10">
