@@ -1,5 +1,5 @@
 
-<h1 align="center">Undergraduation CRM Dashboard</h1>
+<h1 align="center">CRM Dashboard</h1>
 
 <p align="center">
   A lightweight internal CRM dashboard for managing student interactions on undergraduation.com.
@@ -19,7 +19,7 @@
 
 ## Introduction
 
-This project aims to build a basic internal-facing CRM-style web dashboard to help the Undergraduation team manage student interactions, track their progress, and log communication history. This will provide a centralized view of each student’s journey on the platform.
+This project aims to build a basic internal-facing CRM-style web dashboard to help the Application Support Team manage student interactions, track progress, and log communication history.
 
 [Live demo](https://crm-dashboard-gray-one.vercel.app/dashboard)
 
@@ -75,7 +75,7 @@ Build an internal CRM dashboard to:
 
 *   Frontend: Next.js with typescript
 *   Backend: FastAPI
-*   Database: Supabase ( since setup is easy and i think relational dbs are better for this usecase and also because its freeeee)
+*   Database: Supabase ( since setup is easy and i think relational dbs are better for this use case and also because its freeeee)
 *   Email: TBD
 *   Auth: JWT
 
